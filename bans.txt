@@ -1,3 +1,4 @@
 # PhysBox VR global ban list
 # One player code per line (shown under the player's name tag, e.g. 7F3K2Q).
 # Anything after a # is a note, e.g.:  7F3K2Q  # griefing 24/11
+R8RH3P
