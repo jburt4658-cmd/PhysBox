@@ -11,7 +11,10 @@
   body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
   header { display:flex; align-items:center; gap:12px; padding:18px 28px; border-bottom:1px solid var(--line); }
   header h1 { font-size:18px; margin:0; letter-spacing:.5px; }
-  header h1 b { color:var(--accent); }
+  header h1 { display:flex; align-items:center; gap:12px; }
+  header h1 .logo { height:30px; width:auto; display:block; }
+  header h1 span { color:var(--muted); font-weight:600; font-size:15px; text-transform:uppercase; letter-spacing:1px; }
+  .biglogo { display:block; width:100%; max-width:360px; margin:0 auto 22px; }
   header .who { margin-left:auto; color:var(--muted); font-size:13px; }
   main { max-width:980px; margin:0 auto; padding:24px 28px 60px; }
   .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin-bottom:20px; }
@@ -41,13 +44,14 @@
 </head>
 <body>
 <header>
-  <h1>PHYSBOX <b>VR</b> · Admin</h1>
+  <h1><img src="image.png" alt="PhysBox VR" class="logo"><span>Admin</span></h1>
   <span class="who" id="who"></span>
   <button class="ghost" id="logout" hidden>Sign out</button>
 </header>
 
 <main>
   <section class="card" id="login" hidden>
+    <img src="image.png" alt="PhysBox VR" class="biglogo">
     <h2>Sign in</h2>
     <div class="row">
       <input class="grow" id="email" type="email" placeholder="your email" autocomplete="email">
