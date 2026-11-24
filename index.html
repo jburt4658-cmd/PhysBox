@@ -40,6 +40,8 @@
   #login { max-width:420px; margin:60px auto; }
   .hint { color:var(--muted); font-size:13px; margin-top:8px; }
   .search { margin-left:auto; width:200px; }
+  .col { display:flex; flex-direction:column; gap:10px; }
+  a { color:var(--accent); }
 </style>
 </head>
 <body>
@@ -53,11 +55,12 @@
   <section class="card" id="login" hidden>
     <img src="image.png" alt="PhysBox VR" class="biglogo">
     <h2>Sign in</h2>
-    <div class="row">
-      <input class="grow" id="email" type="email" placeholder="your email" autocomplete="email">
-      <button id="sendLink">Email me a link</button>
-    </div>
-    <p class="hint">Only admin accounts can change anything. You'll get a sign-in link by email.</p>
+    <form id="pwForm" class="col">
+      <input id="email" type="email" placeholder="email" autocomplete="username" required>
+      <input id="password" type="password" placeholder="password" autocomplete="current-password" required>
+      <button id="pwBtn" type="submit">Sign in</button>
+    </form>
+    <p class="hint">Only admin accounts can change anything. <a href="#" id="sendLink">Email me a sign-in link instead</a></p>
     <div class="msg" id="loginMsg"></div>
   </section>
 
@@ -121,13 +124,19 @@ async function show() {
   if (session) { loadBans(); loadKeys(); }
 }
 
-$("sendLink").onclick = async () => {
+$("pwForm").onsubmit = async (e) => {
+  e.preventDefault();
+  $("pwBtn").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+  $("pwBtn").disabled = false;
+  if (error) msg($("loginMsg"), error.message);
+};
+$("sendLink").onclick = async (e) => {
+  e.preventDefault();
   const email = $("email").value.trim();
-  if (!email) return;
-  $("sendLink").disabled = true;
-  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.href.split("#")[0] } });
-  $("sendLink").disabled = false;
-  error ? msg($("loginMsg"), error.message) : msg($("loginMsg"), "Check your email for the sign-in link.", true);
+  if (!email) return msg($("loginMsg"), "Type your email first.");
+    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.href.split("#")[0] } });
+    error ? msg($("loginMsg"), error.message) : msg($("loginMsg"), "Check your email for the sign-in link.", true);
 };
 $("logout").onclick = async () => { await sb.auth.signOut(); show(); };
 sb.auth.onAuthStateChange(() => show());
