@@ -66,6 +66,29 @@
 
   <div id="app" hidden>
     <section class="card">
+      <h2>Player view</h2>
+      <div class="row">
+        <input class="code" id="viewCode" placeholder="CODE" maxlength="12">
+        <button id="viewBtn">View</button>
+      </div>
+      <p class="hint">Takes a snapshot of what they're seeing. Only works while they're in a multiplayer game, and takes up to ~20 seconds.</p>
+      <div class="msg" id="viewMsg"></div>
+      <img id="viewImg" alt="" style="display:none;width:100%;max-width:640px;border-radius:8px;margin-top:10px;border:1px solid var(--line)">
+    </section>
+
+    <section class="card">
+      <div class="row" style="margin-bottom:12px">
+        <h2 style="margin:0">Reports <span id="repCount"></span></h2>
+        <label class="hint" style="margin:0 0 0 auto"><input type="checkbox" id="repClosed"> show closed</label>
+      </div>
+      <table>
+        <thead><tr><th>When</th><th>Player</th><th>Reason</th><th>Reported by</th><th>Where</th><th></th></tr></thead>
+        <tbody id="reports"></tbody>
+      </table>
+      <div class="msg" id="repMsg"></div>
+    </section>
+
+    <section class="card">
       <h2>Ban a player</h2>
       <div class="row">
         <input class="code" id="banCode" placeholder="CODE" maxlength="12">
@@ -136,7 +159,7 @@ async function show() {
   $("app").hidden = !session;
   $("logout").hidden = !session;
   $("who").textContent = session ? session.user.email : "";
-  if (session) { loadBans(); loadKeys(); loadVbans(); }
+  if (session) { loadBans(); loadKeys(); loadVbans(); loadReports(); }
 }
 
 $("pwForm").onsubmit = async (e) => {
@@ -173,7 +196,7 @@ function drawBans() {
     : `<tr><td colspan="5" class="empty">No bans${q ? " match" : " yet"}.</td></tr>`;
 }
 $("search").oninput = drawBans;
-$("refresh").onclick = () => { loadBans(); loadKeys(); loadVbans(); };
+$("refresh").onclick = () => { loadBans(); loadKeys(); loadVbans(); loadReports(); };
 
 $("banBtn").onclick = async () => {
   const code = $("banCode").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -194,6 +217,84 @@ $("bans").onclick = async (e) => {
   msg($("banMsg"), `Unbanned #${code}.`, true);
   loadBans();
 };
+
+async function loadReports() {
+  const closed = $("repClosed").checked;
+  let q = sb.from("reports").select("*").order("created_at", { ascending: false }).limit(100);
+  if (!closed) q = q.eq("status", "open");
+  const { data, error } = await q;
+  if (error) return msg($("repMsg"), error.message.includes("row-level") ? "Your account isn't an admin." : error.message);
+  const open = data.filter((r) => r.status === "open").length;
+  $("repCount").textContent = `(${open} open)`;
+  $("reports").innerHTML = data.length ? data.map((r) => `<tr${r.status === "open" ? "" : ' style="opacity:.5"'}>
+      <td class="when">${when(r.created_at)}</td>
+      <td>${esc(r.target_name)} <span class="mono when">#${esc(r.target_code)}</span>
+        ${bans.some((b) => b.code === r.target_code) ? '<b style="color:var(--red)">BANNED</b>' : ""}</td>
+      <td>${esc(r.reason)}</td>
+      <td>${esc(r.reporter_name)} <span class="mono when">#${esc(r.reporter_code)}</span></td>
+      <td class="when">${esc(r.map)}${r.lobby_name ? "<br>" + esc(r.lobby_name) : ""}<br>(${Number(r.pos_x).toFixed(1)}, ${Number(r.pos_y).toFixed(1)}, ${Number(r.pos_z).toFixed(1)})</td>
+      <td style="white-space:nowrap">
+        <button class="ghost" data-rview="${esc(r.target_code)}">View</button>
+        <button class="danger" data-rban="${r.id}">Ban</button>
+        <button class="danger" data-rvban="${r.id}">VC Ban</button>
+        <button class="ghost" data-rstatus="${r.id}">${r.status === "open" ? "Close" : "Reopen"}</button></td></tr>`).join("")
+    : `<tr><td colspan="6" class="empty">No ${closed ? "" : "open "}reports.</td></tr>`;
+  reportRows = data;
+}
+let reportRows = [];
+$("repClosed").onchange = loadReports;
+$("reports").onclick = async (e) => {
+  const d = e.target.dataset || {};
+  if (d.rview) { $("viewCode").value = d.rview; return takeView(d.rview); }
+  const id = Number(d.rban || d.rvban || d.rstatus);
+  const r = reportRows.find((x) => x.id === id);
+  if (!r) return;
+  const { data: { session } } = await sb.auth.getSession();
+  let error;
+  if (d.rban) {
+    if (!confirm(`Ban ${r.target_name} #${r.target_code} everywhere?`)) return;
+    ({ error } = await sb.from("bans").upsert({ code: r.target_code, reason: `${r.reason} (reported by ${r.reporter_name})`, banned_by: session.user.email }));
+    if (!error) { msg($("repMsg"), `Banned #${r.target_code}.`, true); loadBans(); }
+  } else if (d.rvban) {
+    if (!confirm(`Voice ban ${r.target_name} #${r.target_code}?`)) return;
+    ({ error } = await sb.from("voice_bans").upsert({ code: r.target_code, reason: `${r.reason} (reported by ${r.reporter_name})`, banned_by: session.user.email }));
+    if (!error) { msg($("repMsg"), `Voice banned #${r.target_code}.`, true); loadVbans(); }
+  } else {
+    const open = r.status === "open";
+    ({ error } = await sb.from("reports").update({ status: open ? "closed" : "open", closed_by: open ? session.user.email : "" }).eq("id", id));
+    if (!error) loadReports();
+  }
+  if (error) msg($("repMsg"), error.message);
+};
+
+let viewTimer = null;
+async function takeView(code) {
+  code = code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (code.length < 4) return msg($("viewMsg"), "Enter the player code.");
+  clearInterval(viewTimer);
+  const { data: { session } } = await sb.auth.getSession();
+  const asked = Math.floor(Date.now() / 1000);
+  const { error } = await sb.from("view_requests").upsert({ code, requested_at: new Date().toISOString(), requested_by: session.user.email });
+  if (error) return msg($("viewMsg"), error.message);
+  msg($("viewMsg"), `Asking #${code}'s game for a snapshot...`, true);
+  document.getElementById("viewCard")?.scrollIntoView();
+  let tries = 0;
+  viewTimer = setInterval(async () => {
+    tries++;
+    const { data } = await sb.storage.from("views").list(code, { limit: 1, sortBy: { column: "name", order: "desc" } });
+    const f = data && data[0];
+    if (f && parseInt(f.name) >= asked - 5) {
+      clearInterval(viewTimer);
+      const { data: u } = await sb.storage.from("views").createSignedUrl(`${code}/${f.name}`, 600);
+      $("viewImg").src = u.signedUrl; $("viewImg").style.display = "block";
+      msg($("viewMsg"), `#${code}'s view, ${new Date(parseInt(f.name) * 1000).toLocaleTimeString()}`, true);
+    } else if (tries >= 15) {
+      clearInterval(viewTimer);
+      msg($("viewMsg"), `No snapshot from #${code}. They're probably not in a multiplayer game right now (or on an older version).`);
+    }
+  }, 3000);
+}
+$("viewBtn").onclick = () => takeView($("viewCode").value);
 
 async function loadVbans() {
   const { data, error } = await sb.from("voice_bans").select("*").order("created_at", { ascending: false });
