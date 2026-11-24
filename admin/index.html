@@ -89,6 +89,21 @@
     </section>
 
     <section class="card">
+      <h2>Voice chat bans <span id="vbanCount"></span></h2>
+      <div class="row" style="margin-bottom:12px">
+        <input class="code" id="vbanCode" placeholder="CODE" maxlength="12">
+        <input class="grow" id="vbanReason" placeholder="Reason (shown to them in the Multiplayer menu)">
+        <button id="vbanBtn">Voice ban</button>
+      </div>
+      <p class="hint">They can still play, but can't talk, and nobody hears them.</p>
+      <table>
+        <thead><tr><th>Code</th><th>Reason</th><th>When</th><th>By</th><th></th></tr></thead>
+        <tbody id="vbans"></tbody>
+      </table>
+      <div class="msg" id="vbanMsg"></div>
+    </section>
+
+    <section class="card">
       <h2>In-game admin keys</h2>
       <div class="row" style="margin-bottom:12px">
         <input class="grow" id="keyIn" placeholder="Admin key, e.g. 3FA9 12C0 77DE 0B41" style="font-family:ui-monospace,Consolas,monospace">
@@ -121,7 +136,7 @@ async function show() {
   $("app").hidden = !session;
   $("logout").hidden = !session;
   $("who").textContent = session ? session.user.email : "";
-  if (session) { loadBans(); loadKeys(); }
+  if (session) { loadBans(); loadKeys(); loadVbans(); }
 }
 
 $("pwForm").onsubmit = async (e) => {
@@ -158,7 +173,7 @@ function drawBans() {
     : `<tr><td colspan="5" class="empty">No bans${q ? " match" : " yet"}.</td></tr>`;
 }
 $("search").oninput = drawBans;
-$("refresh").onclick = () => { loadBans(); loadKeys(); };
+$("refresh").onclick = () => { loadBans(); loadKeys(); loadVbans(); };
 
 $("banBtn").onclick = async () => {
   const code = $("banCode").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -178,6 +193,36 @@ $("bans").onclick = async (e) => {
   if (error || count === 0) return msg($("banMsg"), error ? error.message : "Couldn't unban (is your account an admin?)");
   msg($("banMsg"), `Unbanned #${code}.`, true);
   loadBans();
+};
+
+async function loadVbans() {
+  const { data, error } = await sb.from("voice_bans").select("*").order("created_at", { ascending: false });
+  if (error) return msg($("vbanMsg"), error.message);
+  $("vbanCount").textContent = `(${data.length})`;
+  $("vbans").innerHTML = data.length ? data.map((b) => `<tr>
+      <td class="mono">#${esc(b.code)}</td><td>${esc(b.reason)}</td>
+      <td class="when">${when(b.created_at)}</td><td class="mono when">${esc(b.banned_by || "")}</td>
+      <td><button class="danger" data-vunban="${esc(b.code)}">Unban</button></td></tr>`).join("")
+    : `<tr><td colspan="5" class="empty">No voice bans.</td></tr>`;
+}
+$("vbanBtn").onclick = async () => {
+  const code = $("vbanCode").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const reason = $("vbanReason").value.trim() || "No reason given";
+  if (code.length < 4) return msg($("vbanMsg"), "Enter the player code (6 letters/numbers).");
+  const { data: { session } } = await sb.auth.getSession();
+  const { error } = await sb.from("voice_bans").upsert({ code, reason, banned_by: session.user.email });
+  if (error) return msg($("vbanMsg"), error.message.includes("row-level") ? "Your account isn't an admin." : error.message);
+  msg($("vbanMsg"), `Voice banned #${code}.`, true);
+  $("vbanCode").value = ""; $("vbanReason").value = "";
+  loadVbans();
+};
+$("vbans").onclick = async (e) => {
+  const code = e.target.dataset?.vunban;
+  if (!code || !confirm(`Lift the voice ban on #${code}?`)) return;
+  const { error, count } = await sb.from("voice_bans").delete({ count: "exact" }).eq("code", code);
+  if (error || count === 0) return msg($("vbanMsg"), error ? error.message : "Couldn't unban (is your account an admin?)");
+  msg($("vbanMsg"), `Voice ban lifted for #${code}.`, true);
+  loadVbans();
 };
 
 async function loadKeys() {
