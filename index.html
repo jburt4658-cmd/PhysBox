@@ -3,209 +3,177 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PhysBox VR · Admin</title>
-<meta name="robots" content="noindex">
+<title>PhysBox VR: free VR physics sandbox for Meta Quest &amp; PC VR</title>
+<meta name="description" content="PhysBox VR is a free physics sandbox for Meta Quest and PC VR. Climb, grab, throw, ride and wreck everything, alone or with up to 4 friends online.">
+<meta property="og:title" content="PhysBox VR">
+<meta property="og:description" content="A free VR physics sandbox. Grab anything, climb everything, play with up to 4 friends.">
+<meta property="og:image" content="hero.jpg">
+<link rel="icon" href="icon.png">
 <style>
-  :root { --bg:#0f1115; --panel:#181b22; --line:#2a2f3a; --text:#e8eaf0; --muted:#8b93a7; --accent:#ff8a1f; --red:#ff5a5a; --green:#4cd38a; }
-  * { box-sizing: border-box; }
-  body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
-  header { display:flex; align-items:center; gap:12px; padding:18px 28px; border-bottom:1px solid var(--line); }
-  header h1 { font-size:18px; margin:0; letter-spacing:.5px; }
-  header h1 { display:flex; align-items:center; gap:12px; }
-  header h1 .logo { height:30px; width:auto; display:block; }
-  header h1 span { color:var(--muted); font-weight:600; font-size:15px; text-transform:uppercase; letter-spacing:1px; }
-  .biglogo { display:block; width:100%; max-width:360px; margin:0 auto 22px; }
-  header .who { margin-left:auto; color:var(--muted); font-size:13px; }
-  main { max-width:980px; margin:0 auto; padding:24px 28px 60px; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin-bottom:20px; }
-  .card h2 { margin:0 0 12px; font-size:15px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
-  input, button { font:inherit; color:inherit; }
-  input { background:#0c0e12; border:1px solid var(--line); border-radius:7px; padding:9px 11px; outline:none; }
-  input:focus { border-color:var(--accent); }
-  button { background:var(--accent); color:#111; border:0; border-radius:7px; padding:9px 14px; font-weight:600; cursor:pointer; }
-  button.ghost { background:transparent; color:var(--text); border:1px solid var(--line); font-weight:500; }
-  button.danger { background:transparent; color:var(--red); border:1px solid #5a2a2a; font-weight:500; padding:6px 10px; }
-  button:disabled { opacity:.5; cursor:default; }
-  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-  .row input.code { width:130px; text-transform:uppercase; font-family:ui-monospace, Consolas, monospace; }
-  .row input.grow { flex:1; min-width:200px; }
-  table { width:100%; border-collapse:collapse; }
-  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { color:var(--muted); font-weight:500; font-size:13px; }
-  td.mono { font-family:ui-monospace, Consolas, monospace; }
-  td.when { color:var(--muted); white-space:nowrap; font-size:13px; }
-  .empty { color:var(--muted); padding:14px 8px; }
-  .msg { min-height:20px; font-size:13px; margin-top:10px; }
-  .msg.err { color:var(--red); } .msg.ok { color:var(--green); }
-  #login { max-width:420px; margin:60px auto; }
-  .hint { color:var(--muted); font-size:13px; margin-top:8px; }
-  .search { margin-left:auto; width:200px; }
-  .col { display:flex; flex-direction:column; gap:10px; }
-  a { color:var(--accent); }
+  :root { --bg:#07090d; --panel:#0f141b; --line:#1d2632; --text:#eef3f8; --muted:#8d9aab; --cyan:#00c8ff; --cyan-d:#0096c7; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color:inherit; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+
+  nav { position:absolute; inset:0 0 auto 0; z-index:5; }
+  nav .wrap { display:flex; align-items:center; justify-content:flex-end; padding-top:20px; }
+  nav img { height:26px; display:block; }
+  nav a.small { font-size:14px; color:var(--muted); text-decoration:none; }
+  nav a.small:hover { color:var(--text); }
+
+  .hero { position:relative; min-height:92vh; display:flex; align-items:flex-end; overflow:hidden; }
+  .hero::before { content:""; position:absolute; inset:0; background:url(hero.jpg) center 60%/cover no-repeat; transform:scale(1.03); }
+  .hero::after { content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(7,9,13,.55) 0%, rgba(7,9,13,.15) 35%, rgba(7,9,13,.75) 75%, var(--bg) 100%),
+               linear-gradient(90deg, rgba(7,9,13,.85) 0%, rgba(7,9,13,0) 60%); }
+  .hero .wrap { position:relative; z-index:2; padding-bottom:9vh; width:100%; }
+  .hero .logo { width:min(560px, 90%); display:block; filter:drop-shadow(0 8px 30px rgba(0,0,0,.6)); }
+  .hero p.tag { font-size:clamp(18px, 2.2vw, 22px); max-width:560px; margin:22px 0 30px; color:#d5dde7; }
+  .free { display:inline-block; font-weight:800; font-size:13px; letter-spacing:2px; color:var(--bg); background:var(--cyan); padding:4px 10px; border-radius:4px; margin-bottom:18px; }
+
+  .btns { display:flex; flex-wrap:wrap; gap:14px; }
+  .btn { display:inline-flex; align-items:center; gap:10px; padding:14px 26px; border-radius:10px; font-weight:700; text-decoration:none; font-size:16px; transition:transform .15s, background .15s; }
+  .btn:hover { transform:translateY(-2px); }
+  .btn.primary { background:var(--cyan); color:#04121a; box-shadow:0 10px 30px rgba(0,200,255,.25); }
+  .btn.primary:hover { background:#3dd6ff; }
+  .btn.ghost { border:1px solid rgba(255,255,255,.25); background:rgba(7,9,13,.4); backdrop-filter:blur(6px); }
+  .btn svg { width:20px; height:20px; }
+
+  section { padding:90px 0; }
+  h2 { font-size:clamp(28px, 4vw, 40px); line-height:1.15; margin:0 0 14px; letter-spacing:-.5px; }
+  h2 em { font-style:normal; color:var(--cyan); }
+  .lead { color:var(--muted); max-width:620px; margin:0 0 44px; font-size:17px; }
+
+  .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; }
+  @media (max-width:900px) { .grid { grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:600px) { .grid { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:24px; }
+  .card .ic { width:42px; height:42px; border-radius:10px; background:rgba(0,200,255,.12); color:var(--cyan); display:grid; place-items:center; margin-bottom:14px; }
+  .card .ic svg { width:22px; height:22px; }
+  .card h3 { margin:0 0 6px; font-size:18px; }
+  .card p { margin:0; color:var(--muted); font-size:15px; }
+
+  .wide { position:relative; border-radius:18px; overflow:hidden; border:1px solid var(--line); }
+  .wide img { display:block; width:100%; height:auto; }
+
+  .platforms { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; }
+  .plat { display:flex; gap:16px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px 24px; }
+  .plat b { display:block; font-size:18px; }
+  .plat span { color:var(--muted); font-size:15px; }
+  .dot { flex:none; width:12px; height:12px; border-radius:50%; background:var(--cyan); margin-top:8px; box-shadow:0 0 12px var(--cyan); }
+
+  .cta { text-align:center; background:radial-gradient(ellipse at center, rgba(0,200,255,.12), transparent 65%); }
+  .cta h2 { margin-bottom:10px; }
+  .cta p { color:var(--muted); margin:0 0 30px; }
+  .cta .btns { justify-content:center; }
+
+  footer { border-top:1px solid var(--line); padding:28px 0; color:var(--muted); font-size:14px; }
+  footer .wrap { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; }
+  footer a { color:var(--muted); text-decoration:none; }
+  footer a:hover { color:var(--text); }
+
+  @media (max-width:640px) { section { padding:64px 0; } .hero { min-height:88vh; } }
 </style>
 </head>
 <body>
-<header>
-  <h1><img src="image.png" alt="PhysBox VR" class="logo"><span>Admin</span></h1>
-  <span class="who" id="who"></span>
-  <button class="ghost" id="logout" hidden>Sign out</button>
+
+<nav>
+  <div class="wrap">
+    <a class="small" href="#features">Features</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="free">FREE TO PLAY</span>
+    <img class="logo" src="logo.png" alt="PhysBox VR">
+    <p class="tag">A VR physics sandbox where everything is real. Grab it, climb it, throw it, ride it, wreck it, and bring up to 3 friends along.</p>
+    <div class="btns">
+      <a class="btn primary" href="https://www.meta.com/s/6JZSkduBI" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.5 14.5v-9l7 4.5-7 4.5Z"/></svg>
+        Get it free on Meta Quest
+      </a>
+      <a class="btn ghost" href="#features">See what's inside</a>
+    </div>
+  </div>
 </header>
 
 <main>
-  <section class="card" id="login" hidden>
-    <img src="image.png" alt="PhysBox VR" class="biglogo">
-    <h2>Sign in</h2>
-    <form id="pwForm" class="col">
-      <input id="email" type="email" placeholder="email" autocomplete="username" required>
-      <input id="password" type="password" placeholder="password" autocomplete="current-password" required>
-      <button id="pwBtn" type="submit">Sign in</button>
-    </form>
-    <p class="hint">Only admin accounts can change anything. <a href="#" id="sendLink">Email me a sign-in link instead</a></p>
-    <div class="msg" id="loginMsg"></div>
+  <section id="features">
+    <div class="wrap">
+      <h2>Your hands. <em>Real physics.</em></h2>
+      <p class="lead">No canned animations. Every box, body and bike is simulated, so anything you can think of probably works.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8a8 8 0 0 0 16 0v-2a2 2 0 0 0-4 0"/></svg></div>
+          <h3>Full physics body</h3>
+          <p>Your hands collide with the world. Push, pull, hang off ledges and climb almost anything.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17.5 14v7M14 17.5h7"/></svg></div>
+          <h3>Spawn anything</h3>
+          <p>Crates, dominoes, weapons, humans and vehicles, straight from your wrist menu.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2.5"/><path d="M12 7v7M8 10l4 1 4-1M9 21l3-7 3 7"/></svg></div>
+          <h3>Ragdoll humans</h3>
+          <p>NPCs who react, stagger, fight back and fall like real bodies.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M5.5 17 9 9h5l4.5 8M9 9 7 6H5M14 9l1-3h3"/></svg></div>
+          <h3>Ride the dirt bike</h3>
+          <p>Grab the bars, twist the throttle and send it off the nearest ramp.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h11l3-3h4v6h-4l-3-3M7 12v4"/></svg></div>
+          <h3>Weapons that feel right</h3>
+          <p>Load mags, rack slides and swing melee weapons with real weight.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 2 6 5.5"/></svg></div>
+          <h3>Online multiplayer</h3>
+          <p>Play with up to 4 people online, with Quest and PC VR in the same lobby.</p>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <div id="app" hidden>
-    <section class="card">
-      <h2>Ban a player</h2>
-      <div class="row">
-        <input class="code" id="banCode" placeholder="CODE" maxlength="12">
-        <input class="grow" id="banReason" placeholder="Reason (shown to them on the ban screen)">
-        <button id="banBtn">Ban</button>
-      </div>
-      <p class="hint">The player code is under their name tag in-game, or in Recent Players. Bans apply within ~15 seconds.</p>
-      <div class="msg" id="banMsg"></div>
-    </section>
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="wide"><img src="wide.jpg" alt="A dirt bike wheelies through flying crates while a wooden dummy tumbles in the PhysBox lab" loading="lazy"></div>
+    </div>
+  </section>
 
-    <section class="card">
-      <div class="row" style="margin-bottom:12px">
-        <h2 style="margin:0">Bans <span id="banCount"></span></h2>
-        <input class="search" id="search" placeholder="Search code or reason">
-        <button class="ghost" id="refresh">Refresh</button>
+  <section>
+    <div class="wrap">
+      <h2>Where to <em>play</em></h2>
+      <p class="lead">Free on every headset, with one account system and the same lobbies everywhere.</p>
+      <div class="platforms">
+        <div class="plat"><i class="dot"></i><div><b>Meta Quest 2 &amp; 3</b><span>Runs natively, no PC needed. Get it from the Meta Horizon Store.</span></div></div>
+        <div class="plat"><i class="dot"></i><div><b>PC VR</b><span>Works with any PC VR headset and plays online with Quest players.</span></div></div>
       </div>
-      <table>
-        <thead><tr><th>Code</th><th>Reason</th><th>When</th><th>By</th><th></th></tr></thead>
-        <tbody id="bans"></tbody>
-      </table>
-    </section>
+    </div>
+  </section>
 
-    <section class="card">
-      <h2>In-game admin keys</h2>
-      <div class="row" style="margin-bottom:12px">
-        <input class="grow" id="keyIn" placeholder="Admin key, e.g. 3FA9 12C0 77DE 0B41" style="font-family:ui-monospace,Consolas,monospace">
-        <input id="keyNote" placeholder="Note (e.g. my Quest)">
-        <button id="keyBtn">Add</button>
+  <section class="cta">
+    <div class="wrap">
+      <h2>Ready to break <em>everything</em>?</h2>
+      <p>PhysBox VR is free. Grab it and start throwing things.</p>
+      <div class="btns">
+        <a class="btn primary" href="https://www.meta.com/s/6JZSkduBI" target="_blank" rel="noopener">Get it free on Meta Quest</a>
       </div>
-      <table>
-        <thead><tr><th>Key</th><th>Note</th><th>Added</th><th></th></tr></thead>
-        <tbody id="keys"></tbody>
-      </table>
-      <div class="msg" id="keyMsg"></div>
-    </section>
-  </div>
+    </div>
+  </section>
 </main>
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+<footer>
+  <div class="wrap">
+    <span>© 2026 PhysBox VR</span>
+    <span><a href="https://www.meta.com/s/6JZSkduBI" target="_blank" rel="noopener">Meta Horizon Store</a></span>
+  </div>
+</footer>
 
-const sb = createClient("https://lnwcjmwfwvojieavhcpx.supabase.co", "sb_publishable_6uEkR2y5Gx76WSTf3jCOVA_P2UtvkUP");
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const when = (t) => t ? new Date(t).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
-const msg = (el, text, ok = false) => { el.textContent = text; el.className = "msg " + (ok ? "ok" : "err"); };
-const pretty = (k) => k.replace(/(.{4})(?=.)/g, "$1 ");
-let bans = [];
-
-async function show() {
-  const { data: { session } } = await sb.auth.getSession();
-  $("login").hidden = !!session;
-  $("app").hidden = !session;
-  $("logout").hidden = !session;
-  $("who").textContent = session ? session.user.email : "";
-  if (session) { loadBans(); loadKeys(); }
-}
-
-$("pwForm").onsubmit = async (e) => {
-  e.preventDefault();
-  $("pwBtn").disabled = true;
-  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
-  $("pwBtn").disabled = false;
-  if (error) msg($("loginMsg"), error.message);
-};
-$("sendLink").onclick = async (e) => {
-  e.preventDefault();
-  const email = $("email").value.trim();
-  if (!email) return msg($("loginMsg"), "Type your email first.");
-    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.href.split("#")[0] } });
-    error ? msg($("loginMsg"), error.message) : msg($("loginMsg"), "Check your email for the sign-in link.", true);
-};
-$("logout").onclick = async () => { await sb.auth.signOut(); show(); };
-sb.auth.onAuthStateChange(() => show());
-
-async function loadBans() {
-  const { data, error } = await sb.from("bans").select("*").order("created_at", { ascending: false });
-  if (error) return msg($("banMsg"), error.message);
-  bans = data;
-  drawBans();
-}
-function drawBans() {
-  const q = $("search").value.trim().toUpperCase();
-  const rows = bans.filter((b) => !q || b.code.includes(q) || (b.reason || "").toUpperCase().includes(q));
-  $("banCount").textContent = `(${bans.length})`;
-  $("bans").innerHTML = rows.length ? rows.map((b) => `<tr>
-      <td class="mono">#${esc(b.code)}</td><td>${esc(b.reason)}</td>
-      <td class="when">${when(b.created_at)}</td><td class="mono when">${esc(b.banned_by || "")}</td>
-      <td><button class="danger" data-unban="${esc(b.code)}">Unban</button></td></tr>`).join("")
-    : `<tr><td colspan="5" class="empty">No bans${q ? " match" : " yet"}.</td></tr>`;
-}
-$("search").oninput = drawBans;
-$("refresh").onclick = () => { loadBans(); loadKeys(); };
-
-$("banBtn").onclick = async () => {
-  const code = $("banCode").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const reason = $("banReason").value.trim() || "No reason given";
-  if (code.length < 4) return msg($("banMsg"), "Enter the player code (6 letters/numbers).");
-  const { data: { session } } = await sb.auth.getSession();
-  const { error } = await sb.from("bans").upsert({ code, reason, banned_by: session.user.email });
-  if (error) return msg($("banMsg"), error.message.includes("row-level") ? "Your account isn't an admin." : error.message);
-  msg($("banMsg"), `Banned #${code}.`, true);
-  $("banCode").value = ""; $("banReason").value = "";
-  loadBans();
-};
-$("bans").onclick = async (e) => {
-  const code = e.target.dataset?.unban;
-  if (!code || !confirm(`Unban #${code}?`)) return;
-  const { error, count } = await sb.from("bans").delete({ count: "exact" }).eq("code", code);
-  if (error || count === 0) return msg($("banMsg"), error ? error.message : "Couldn't unban (is your account an admin?)");
-  msg($("banMsg"), `Unbanned #${code}.`, true);
-  loadBans();
-};
-
-async function loadKeys() {
-  const { data, error } = await sb.from("admins").select("*").order("created_at");
-  if (error) return msg($("keyMsg"), error.message);
-  $("keys").innerHTML = data.length ? data.map((k) => `<tr>
-      <td class="mono">${esc(pretty(k.key))}</td><td>${esc(k.note || "")}</td><td class="when">${when(k.created_at)}</td>
-      <td><button class="danger" data-key="${esc(k.key)}">Remove</button></td></tr>`).join("")
-    : `<tr><td colspan="4" class="empty">No admin keys.</td></tr>`;
-}
-$("keyBtn").onclick = async () => {
-  const key = $("keyIn").value.toUpperCase().replace(/[^0-9A-F]/g, "");
-  if (key.length !== 16) return msg($("keyMsg"), "An admin key is 16 characters (0-9, A-F).");
-  const { error } = await sb.from("admins").upsert({ key, note: $("keyNote").value.trim() || null });
-  if (error) return msg($("keyMsg"), error.message.includes("row-level") ? "Your account isn't an admin." : error.message);
-  msg($("keyMsg"), "Admin key added.", true);
-  $("keyIn").value = ""; $("keyNote").value = "";
-  loadKeys();
-};
-$("keys").onclick = async (e) => {
-  const key = e.target.dataset?.key;
-  if (!key || !confirm(`Remove admin key ${pretty(key)}?`)) return;
-  const { error, count } = await sb.from("admins").delete({ count: "exact" }).eq("key", key);
-  if (error || count === 0) return msg($("keyMsg"), error ? error.message : "Couldn't remove (is your account an admin?)");
-  loadKeys();
-};
-
-show();
-</script>
 </body>
 </html>
