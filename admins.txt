@@ -1,4 +1,5 @@
 # PhysBox VR admins
 # One admin key per line (shown as "Admin key: XXXX XXXX XXXX XXXX" on the
 # in-game Multiplayer page after going online once). Spaces don't matter.
-# Add a line for each device you play on, e.g.:  3FA9 12C0 77DE 0B41  # my Quest
+# Add a line for each device you play on, e.g.:  3FA9 12C0 77DE 0B41  # my 
+6D70 990B 3584 AAE6
